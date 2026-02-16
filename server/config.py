@@ -1,4 +1,4 @@
-from rouds.response import JsonResponse, HTMLResponse
+from request_response.response import JsonResponse, HTMLResponse
 
 
 async def app(scope, receive, send):

@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional, TypeVar
 import json
 
-from rouds.status_code import StatusCode
-from rouds.content_type import ContentType
-from rouds.endcodes import TextEncoding
+from request_response.status_code import StatusCode
+from request_response.content_type import ContentType
+from request_response.endcodes import TextEncoding
 
 
 T = TypeVar("T")
