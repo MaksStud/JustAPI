@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class RunServer():
+class RunServer:
     """Start the server with the specified parameters."""
     _instance = None
 
@@ -39,7 +39,6 @@ class RunServer():
     def run(self) -> None:
         """
         Run the server.
-        :return: uvicorn.run
         """
         uvicorn.run(
             self.app, 
