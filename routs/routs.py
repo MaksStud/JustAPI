@@ -1,61 +1,108 @@
-from typing import Dict
+from typing import Dict, Optional, List
 from common.classes import Singleton
 from request_response.response import Response, HTMLResponse
 from request_response.status_code import StatusCode
 from routs.errors import Errors
 
-routs: Dict[str, Response] = {}
+
+class RoutsTreeNode:
+    """
+    Node of a routing tree.
+
+    :param segment: URL path segment stored in this node.
+    :type segment: str
+    """
+
+    def __init__(self, segment: str):
+        self.segment = segment
+        self.children: Dict[str, RoutsTreeNode] = {}
+        self.response: Optional[Response] = None
 
 
 class Routs(Singleton):
     """
-    A singleton class responsible for managing and storing application routes.
+    Routing registry implemented as a tree.
 
-    This class maintains a registry of route strings mapped to their 
-    respective response objects, ensuring that only one instance of the 
-    registry exists throughout the application lifecycle.
-
-    :ivar routs: A dictionary mapping route paths (strings) to Response objects.
+    Stores routes as path segments and resolves them to responses.
     """
 
-    def register(self, rout: str, response: Response) -> None:
+    def __init__(self):
         """
-        Register a new route or update an existing one.
+        Initialize routing tree root node.
+        """
+        if hasattr(self, "root"):
+            return
+        self.root = RoutsTreeNode("/")
 
-        :param rout: The URL path or identifier for the route.
-        :param response: The Response object to be associated with this route.
+    def register(self, path: str, response: Response) -> None:
         """
-        if rout in routs.keys():
+        Register a new route.
+
+        :param path: URL path.
+        :type path: str
+        :param response: Response object bound to the path.
+        :type response: Response
+        :raises ValueError: If route already registered.
+        """
+        segments = self._prepare_path(path)
+        node = self.root
+
+        for segment in segments:
+            if segment not in node.children:
+                node.children[segment] = RoutsTreeNode(segment)
+            node = node.children[segment]
+
+        if node.response is not None:
             raise ValueError(Errors.ROUTE_DUPLICATION)
-        routs[rout] = response
 
-    async def get_resonse(self, rout: str) -> Response:
+        node.response = response
+
+    async def get_response(self, path: str) -> Response:
         """
-        Retrieve a response for a specific route asynchronously.
+        Resolve path to a response.
 
-        If the route is not found in the registry, returns a default 
-        404 Not Found HTML response.
-
-        :param rout: The URL path to look up.
-        :return: The associated Response object or an HTMLResponse (404).
+        :param path: Request path.
+        :type path: str
+        :return: Matched response or 404 response.
         :rtype: Response
         """
-        return routs.get(rout, HTMLResponse("<p><b>ERROR<b/><p/>", status_code=StatusCode.NOT_FOUND))
+        segments = self._prepare_path(path)
+        node = self.root
 
-    def __reduce__(self) -> str:
-        """
-        Define the pickling behavior for the Routs instance.
+        if not segments:
+            if self.root.response:
+                return self.root.response
+        else:
+            for segment in segments:
+                if segment in node.children:
+                    node = node.children[segment]
+                else:
+                    return self._not_found()
 
-        :return: A string representation for object reconstruction.
-        :rtype: str
-        """
-        return f"{self.__class__.__name__}(self.routs={self.routs})"
+        if node.response:
+            return node.response
 
-    def __str__(self) -> str:
-        """
-        Return a string representation of the Routs instance.
+        return self._not_found()
 
-        :return: A string containing the current routes dictionary.
-        :rtype: str
+    def _prepare_path(self, path: str) -> List[str]:
         """
-        return f"{self.__class__.__name__}(self.routs={self.routs})"
+        Normalize and split path into segments.
+
+        :param path: Raw request path.
+        :type path: str
+        :return: List of path segments.
+        :rtype: List[str]
+        """
+        return [segment for segment in path.strip("/").split("/") if segment]
+
+    def _not_found(self) -> Response:
+        """
+        Create default 404 response.
+
+        :return: HTML 404 response.
+        :rtype: Response
+        """
+        return HTMLResponse(
+            "<p><b>404 NOT FOUND</b><p/>",
+            status_code=StatusCode.NOT_FOUND
+        )
