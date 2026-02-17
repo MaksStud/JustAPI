@@ -2,6 +2,9 @@ from typing import Dict
 from common.classes import Singleton
 from request_response.response import Response, HTMLResponse
 from request_response.status_code import StatusCode
+from routs.errors import Errors
+
+routs: Dict[str, Response] = {}
 
 
 class Routs(Singleton):
@@ -14,15 +17,6 @@ class Routs(Singleton):
 
     :ivar routs: A dictionary mapping route paths (strings) to Response objects.
     """
-    def __init__(self) -> None:
-        """
-        Initialize the Routs instance.
-
-        Checks if the 'routs' attribute already exists to prevent overwriting 
-        data during multiple singleton access attempts.
-        """
-        if not hasattr(self, "routs"):
-            self.routs: Dict[str, Response] = {}
 
     def register(self, rout: str, response: Response) -> None:
         """
@@ -31,7 +25,9 @@ class Routs(Singleton):
         :param rout: The URL path or identifier for the route.
         :param response: The Response object to be associated with this route.
         """
-        self.routs[rout] = response
+        if rout in routs.keys():
+            raise ValueError(Errors.ROUTE_DUPLICATION)
+        routs[rout] = response
 
     async def get_resonse(self, rout: str) -> Response:
         """
@@ -44,7 +40,7 @@ class Routs(Singleton):
         :return: The associated Response object or an HTMLResponse (404).
         :rtype: Response
         """
-        return self.routs.get(rout, HTMLResponse("<p><b>ERROR<b/><p/>", status_code=StatusCode.NOT_FOUND))
+        return routs.get(rout, HTMLResponse("<p><b>ERROR<b/><p/>", status_code=StatusCode.NOT_FOUND))
 
     def __reduce__(self) -> str:
         """
