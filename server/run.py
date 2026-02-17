@@ -81,6 +81,4 @@ class RunServer(Singleton):
         """
         self.reload = False
         debugpy.listen((self.host, self.debug_port))
-        logger.debug(f"🚀 Waiting for debugger on port {self.debug_port}...")
         debugpy.wait_for_client()
-        logger.debug("✅ Debugger attached!")
