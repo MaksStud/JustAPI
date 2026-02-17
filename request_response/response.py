@@ -38,6 +38,12 @@ class Response(Generic[T], ABC):
         """Return response to bytes. Need to Implemented in junior classes."""
         raise NotImplementedError()
 
+    def __reduce__(self) -> str:
+        return f"Class: {self.__name__} -> {self.body=}, {self.status_code=}, {self.content_type=}, {self.headers}"
+
+    def __str__(self) -> str:
+        return f"Class: {self.__class__.__name__} -> {self.body=}, {self.status_code=}, {self.content_type=}, {self.headers}"
+
 
 class JsonResponse(Response[dict]):
     """Sends a response in JSON format."""

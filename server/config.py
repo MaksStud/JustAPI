@@ -1,15 +1,9 @@
-from request_response.response import JsonResponse, HTMLResponse
+from routs.routs import Routs
 
 
 async def app(scope, receive, send):
     if scope['type'] == 'http':
         path = scope['path']
 
-        if path == '/':
-            await HTMLResponse("<p><b>MAIN<b/><p/>")(send)
-        elif path == '/contact':
-            await HTMLResponse("<p><b>contact<b/><p/>")(send)
-        elif path == '/j_test':
-            await JsonResponse({"page": "JSON TEST"})(send)
-        else:
-            await HTMLResponse("<p><b>error<b/><p/>")(send)
+        response = await Routs().get_resonse(path)
+        await response(send)
