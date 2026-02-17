@@ -8,21 +8,45 @@ from request_response.endcodes import TextEncoding
 
 
 T = TypeVar("T")
-endcode = TextEncoding.UTF_8
+encode = TextEncoding.UTF_8
 
 
 class Response(Generic[T], ABC):
-    """Base class for Response sup classes."""
+    """
+    Base class for all response types.
+
+    :param body: Response body content.
+    :type body: T
+    :param status_code: HTTP status code.
+    :type status_code: int
+    :param headers: Additional HTTP headers.
+    :type headers: dict
+    """
+
     def __init__(self, body: T, 
                  status_code: int = StatusCode.SUCCESS, 
                  headers: dict = {}):
         self.body = body
         self.status_code = status_code
-        self.content_type = ContentType.TEXT_HTML
+        self.content_type = self._set_content_type()
         self.headers = [[b'content-type', self.content_type]]
 
+    def _set_content_type(self):
+        """
+        Define content type for the response.
+
+        :return: Content-Type header value.
+        :rtype: bytes
+        """
+        return ContentType.TEXT_HTML
+
     async def __call__(self, send):
-        """Sends a response to the sender of the request."""
+        """
+        Send ASGI response.
+
+        :param send: ASGI send callable.
+        :type send: Callable
+        """
         await send({
             'type': 'http.response.start',
             'status': self.status_code,
@@ -35,51 +59,85 @@ class Response(Generic[T], ABC):
 
     @abstractmethod
     async def to_bytes(self, body: Optional[bytes]) -> bytes:
-        """Return response to bytes. Need to Implemented in junior classes."""
+        """
+        Convert response body to bytes.
+
+        Must be implemented in subclasses.
+
+        :param body: Response body.
+        :type body: Optional[bytes]
+        :return: Encoded body.
+        :rtype: bytes
+        """
         raise NotImplementedError()
 
     def __reduce__(self) -> str:
+        """
+        Debug representation used for serialization.
+
+        :return: Debug string.
+        :rtype: str
+        """
         return f"Class: {self.__name__} -> {self.body=}, {self.status_code=}, {self.content_type=}, {self.headers}"
 
     def __str__(self) -> str:
+        """
+        Human-readable representation.
+
+        :return: Debug string.
+        :rtype: str
+        """
         return f"Class: {self.__class__.__name__} -> {self.body=}, {self.status_code=}, {self.content_type=}, {self.headers}"
 
 
 class JsonResponse(Response[dict]):
-    """Sends a response in JSON format."""
-    def __init__(self, body: T, status_code: int = StatusCode.SUCCESS, headers: dict = {}):
-        super().__init__(body, status_code, headers)
-        self.content_type = ContentType.APPLICATION_JSON
+    """
+    JSON response implementation.
+
+    Sends response with ``application/json`` content type.
+    """
 
     async def to_bytes(self, body: Optional[dict]) -> bytes:
         """
-        Endcode JSON to bytes.
+        Encode JSON body to bytes.
 
-        :param body: JSON code.
-
-        :return: Bytes format.
+        :param body: JSON serializable object.
+        :type body: Optional[dict]
+        :return: UTF-8 encoded JSON.
+        :rtype: bytes
         """
         if body is None:
             return b""
 
-        return json.dumps(body, ensure_ascii=False).encode(endcode)
+        return json.dumps(body, ensure_ascii=False).encode(encode)
+
+    def _set_content_type(self):
+        """
+        Set JSON content type.
+
+        :return: JSON content type header.
+        :rtype: bytes
+        """
+        return ContentType.APPLICATION_JSON
 
 
 class HTMLResponse(Response[str]):
-    """Sends a response in HTML code format."""
-    def __init__(self, body: T, status_code: int = StatusCode.SUCCESS, headers: dict = {}):
-        super().__init__(body, status_code, headers)
-        self.content_type = ContentType.TEXT_HTML
+    """
+    HTML response implementation.
+
+    Sends response with HTML content.
+    """
 
     async def to_bytes(self, body: Optional[str]) -> bytes:
         """
-        Endcode HTML to bytes.
+        Encode HTML string to bytes.
 
-        :param body: HTML code.
-
-        :return: Bytes format.
+        :param body: HTML markup.
+        :type body: Optional[str]
+        :return: UTF-8 encoded HTML.
+        :rtype: bytes
         """
         if body is None:
             return b""
 
-        return body.encode(endcode)
+        return body.encode(encode)
