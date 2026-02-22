@@ -1,7 +1,7 @@
-from routs.routs import Routs
+from routs.routs import Routes
 from request_response.response import HTMLResponse, JsonResponse
 
-router = Routs()
+router = Routes()
 
 
 router.register("/", HTMLResponse("<p><b>MAIN<b/><p/>"))

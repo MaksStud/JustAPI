@@ -1,4 +1,4 @@
-from routs.routs import Routs
+from routs.routs import Routes
 from settings import apps
 import importlib
 
@@ -11,5 +11,5 @@ async def app(scope, receive, send):
     if scope['type'] == 'http':
         path = scope['path']
 
-        response = await Routs().get_response(path)
+        response = await Routes().get_response(path)
         await response(send)

@@ -5,7 +5,7 @@ from request_response.status_code import StatusCode
 from routs.errors import Errors
 
 
-class RoutsTreeNode:
+class RoutesTreeNode:
     """
     Node of a routing tree.
 
@@ -15,11 +15,11 @@ class RoutsTreeNode:
 
     def __init__(self, segment: str):
         self.segment = segment
-        self.children: Dict[str, RoutsTreeNode] = {}
+        self.children: Dict[str, RoutesTreeNode] = {}
         self.response: Optional[Response] = None
 
 
-class Routs(Singleton):
+class Routes(Singleton):
     """
     Routing registry implemented as a tree.
 
@@ -32,7 +32,7 @@ class Routs(Singleton):
         """
         if hasattr(self, "root"):
             return
-        self.root = RoutsTreeNode("/")
+        self.root = RoutesTreeNode("/")
 
     def register(self, path: str, response: Response) -> None:
         """
@@ -49,7 +49,7 @@ class Routs(Singleton):
 
         for segment in segments:
             if segment not in node.children:
-                node.children[segment] = RoutsTreeNode(segment)
+                node.children[segment] = RoutesTreeNode(segment)
             node = node.children[segment]
 
         if node.response is not None:
